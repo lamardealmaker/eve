@@ -1,6 +1,7 @@
 import { HumanActionRequiredError } from "#setup/human-action.js";
 import { runDeployFlow } from "#setup/flows/deploy.js";
 import {
+  offerVercelCliUpgrade,
   runInstallVercelCliFlow,
   type InstallVercelCliResult,
 } from "#setup/flows/install-vercel-cli.js";
@@ -521,39 +522,14 @@ async function vercelCliUpgradeOutcome(
     return undefined;
   }
 
-  let choice: "upgrade" | "later";
+  let result: InstallVercelCliResult | { kind: "declined" };
   try {
-    choice = await input.prompter.select({
-      message: "Your Vercel CLI needs an update to list your teams. Upgrade now?",
-      options: [
-        {
-          value: "upgrade",
-          label: "Upgrade Vercel CLI",
-          description: "Run the Vercel CLI's native upgrader",
-        },
-        { value: "later", label: "Not now" },
-      ],
-      initialValue: "upgrade",
-    });
-  } catch {
-    choice = "later";
-  }
-
-  if (choice === "later") {
-    return {
-      message: `The Vercel CLI needs an update — run \`vercel upgrade\`, then retry /${command}.`,
-      tone: "error",
-      preserveFlowDiagnostics: true,
-    };
-  }
-
-  let result: InstallVercelCliResult;
-  try {
-    result = await flows.runInstallVercelCliFlow({
+    result = await offerVercelCliUpgrade({
       appRoot: input.appRoot,
+      message: "Your Vercel CLI needs an update to list your teams. Upgrade now?",
       prompter: input.prompter,
+      runInstallVercelCliFlow: flows.runInstallVercelCliFlow,
       signal: input.signal,
-      upgrade: true,
     });
   } catch (error) {
     return {
@@ -586,6 +562,12 @@ async function vercelCliUpgradeOutcome(
         message: `The Vercel CLI is already up to date. Retry /${command}.`,
         tone: "error",
         preserveFlowDiagnostics: false,
+      };
+    case "declined":
+      return {
+        message: `The Vercel CLI needs an update — run \`vercel upgrade\`, then retry /${command}.`,
+        tone: "error",
+        preserveFlowDiagnostics: true,
       };
   }
 }
