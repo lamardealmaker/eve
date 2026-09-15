@@ -14,6 +14,7 @@ export async function runTuiLinkCommand(
     appRoot: input.appRoot,
     prompter: input.prompter,
     projectSelection: "create-or-link",
+    quietUnlinkedCredentialNotice: true,
     signal: input.signal,
   });
   return result.kind === "cancelled"
@@ -26,6 +27,6 @@ export async function runTuiLinkCommand(
     : {
         message: "Linked this project to Vercel.",
         preserveFlowDiagnostics: false,
-        effect: { kind: "model-access-changed" as const },
+        effect: { kind: "project-linked" as const },
       };
 }
