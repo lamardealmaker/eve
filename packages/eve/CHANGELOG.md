@@ -1,5 +1,27 @@
 # eve
 
+## 0.57.0
+
+### Minor Changes
+
+- 61d4097: Run every conversational turn directly inside the session's owning workflow instead of dispatching a child turn run per message. An idle session hands its settled state to the exact deployment that accepted a new delivery, whether the delivery arrives through the session ID or any channel continuation address, keeping the original session ID and event stream and renewing the session's configured timeout. Deliveries that land while a handoff is in progress wait for the successor instead of starting a replacement session.
+  
+  Steering a running turn applies at the next committed step boundary without cancelling in-flight model or tool work and preserves the turn's identity and usage; input that arrives after the model has answered starts the next turn. `continuation.rekey()` is replaced by `continuation.alias()`: every claimed address stays active, and the most recently selected alias is exposed as `continuation.token`.
+  
+  Sessions from the former driver/turn execution model are imported on their next turn, preserving identity, history, and the original stream while interrupting pending work; drivers started before eve 0.45 are reported inactive and their channel starts a fresh session. Retain the original deployment until imported sessions end, and retire sessions before rolling back across this boundary.
+
+### Patch Changes
+
+- 32aca9b: Restored `agent` tools now dispatch through the shared subagent workflow when framework defaults are disabled.
+- f21e63f: Declare `.vercel/output` for generated eve services so Vercel consumes the Build Output API directory that their build commands produce instead of looking for the framework preset's `.output` default.
+- f21e63f: Make `withEve` discover a containing workspace when Vercel evaluates `vercel.ts` from its temporary `.vercel` directory.
+- 032860c: Bound negotiated session stream responses with renewable leases so abandoned serverless invocations release their durable stream readers. The eve client renews these responses from its cursor without exposing transport heartbeats or lease records as session events; tail-relative reads and streams with reconnection disabled remain unleased.
+- 8bb62e2: Recognize AI Gateway credit-balance and project-budget refusals in semantic error summaries.
+- a08e4bb: Prompt for and resolve the target Vercel project before configuring production self-modification, and scope GitHub connector creation and attachment to that project's owner.
+- 61d4097: Batch closely spaced stream events on Vercel within a 10 ms window to reduce network writes. Explicit Workflow stream-flush overrides remain supported.
+- 53fad6c: Emits canonical GenAI cache-write tokens, reports the provider-confirmed response model, and adds the executing agent name to tool spans.
+- 1e6437b: Announce when dynamic skills are withdrawn completely so agents do not retain stale skill lists.
+
 ## 0.56.0
 
 ### Minor Changes
